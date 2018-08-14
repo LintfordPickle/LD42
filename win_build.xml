@@ -1,0 +1,134 @@
+<!-- ====================================================================== 
+     08.08.2018                                                      
+
+     project     :	The Dome - LD42 Compo
+     description :	
+     
+			     	root / 
+					    build /         // all items of subfolders within this directory are included *within* the jar
+					        classes / 
+					        res /
+					    dist /
+					        docs / 
+					        res /
+					        libs /
+
+====================================================================== -->
+
+<!-- LDLibrary Build  -->
+<project name="TheDome" basedir="." default="main">
+
+	<property name="build-drive">f:</property>
+	<property name="project.name">LD42</property>
+
+	<property name="client-main-class">org.lintford.ld42.BaseGame</property>
+
+	<!-- Input directories -->
+	<property name="input.src.dir" value="src" />
+	<property name="input.lib.dir" value="libs" />
+	<property name="input.res.dir" value="res" />
+
+	<!-- Output directories -->
+	<property name="base.output.dir" value="${build-drive}/dist/java/${project.name}" />
+
+	<property name="build.dir" value="${base.output.dir}/build" />
+	<property name="dist.dir" value="${base.output.dir}/bin" />
+
+	<property name="dist.jar" value="${dist.dir}/" />
+	<property name="dist.lib" value="${dist.dir}/lib/" />
+	<property name="dist.doc" value="${dist.dir}/docs/" />
+	<property name="dist.res" value="${dist.dir}/res/" />
+
+	<!-- clean build -->
+	<target name="clean">
+		<delete dir="${build.dir}" />
+		<delete dir="${dist.dir}" />
+		<delete dir="${base.output.dir}" />
+	</target>
+
+	<!-- Create the output destination folders -->
+	<target name="init">
+		<mkdir dir="${base.output.dir}" />
+		<mkdir dir="${build.dir}/classes" />
+		<mkdir dir="${dist.jar}" />
+		<mkdir dir="${dist.lib}" />
+		<mkdir dir="${dist.doc}" />
+		<mkdir dir="${dist.res}" />
+	</target>
+
+	<!-- Copy dependency files -->
+	<target name="copy.dep">		
+		<!-- Copy the LDLibrary class files into the game build directory so the sources are avaiable during ocmpilation -->
+		<copy todir="${build.dir}">
+			<fileset dir="f:/dist/java/LDLibrary/build">
+				<include name="**/*.*" />
+			</fileset>
+		</copy>
+
+		<!-- Copy the LDLibrary and its dependencies JARs into the game distribution directory. --> 
+		<copy todir="${dist.dir}/">
+			<fileset dir="f:/dist/java/LDLibrary/bin">
+				<include name="**/*.jar" />
+				<exclude name="**/*javadoc*"/>
+				<exclude name="**/*sources*"/>
+				<exclude name="**/*linux*"/>
+				<exclude name="**/*macos*"/>
+				<exclude name="LDLibrary.jar"/>
+			</fileset>
+		</copy>
+
+		<!-- Copy the resource files the game needs to load next to the game's JAR file. -->
+		<copy todir="${dist.res}">
+			<fileset dir="${basedir}/${input.res.dir}">
+				<include name="**/*.*" />
+			</fileset>
+		</copy>
+		<!-- Copy any other JAR dependency files declared by the game. -->
+		<copy todir="${dist.lib}">
+			<fileset dir="${basedir}/${input.lib.dir}">
+				<exclude name="**/*javadoc*"/>
+				<exclude name="**/*src*"/>
+				<exclude name="**/*linux*"/>
+				<exclude name="**/*macos*"/>
+				<include name="**/*.*" />
+			</fileset>
+		</copy>
+	</target>
+
+	<!-- Define the set of .jar files in the input lib dir as the classpath -->
+	<path id="build.class.path">
+		<fileset dir="${input.lib.dir}" includes="**/*.jar" />
+		<fileset dir="f:/dist/java/LDLibrary/bin" includes="**/*.jar" />
+	</path>
+
+	<!-- We will add the jar files to the manifests classpath -->
+	<pathconvert property="manifest.classpath" pathsep=" ">
+		<path refid="build.class.path" />
+		<mapper>
+			<chainedmapper>
+				<flattenmapper />
+				<globmapper from="*.jar" to="lib/*.jar" />
+			</chainedmapper>
+		</mapper>
+	</pathconvert>
+
+	<!-- compile source -->
+	<target name="compile">
+		<javac srcdir="${input.src.dir}" destdir="${build.dir}/classes" classpathref="build.class.path" includeantruntime="false" />
+	</target>
+
+	<!-- create jar -->
+	<target name="createjar" depends="compile">
+		<echo message="createjar" />
+		<jar destfile="${dist.jar}/${project.name}.jar" basedir="${build.dir}/classes">
+			<fileset dir="${build.dir}/res" /> <!-- include the res folder from within the build dir (which contains res from the LDLibrary to embed in JAR) -->
+			<manifest>
+				<attribute name="Main-Class" value="${client-main-class}" />
+				<attribute name="Class-Path" value="${manifest.classpath}" />
+			</manifest>
+		</jar>
+	</target>
+
+	<target name="main" depends="clean, init, copy.dep, compile, createjar" />
+
+</project>
