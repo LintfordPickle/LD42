@@ -389,8 +389,9 @@ public class MobController extends BaseController {
 				pCar1.speed *= 0.8f;
 
 			}
-
+			
 			// Fresnel effect to work out the amount of speed to reduce and damage to deal
+			// FIXME: This is not the correct vector (velocity ??)
 			float fresnelTerm = (Vector2f.dot(collisionVel.x, collisionVel.y, collisionVel.x, collisionVel.y));
 			float lDamAmt0 = Math.abs(fresnelTerm * pCar0.speed / 100f);
 			float lDamAmt1 = Math.abs(fresnelTerm * pCar1.speed / 100f);
@@ -413,7 +414,7 @@ public class MobController extends BaseController {
 		// clamp
 		difference = clamp(difference, -pTurnSpeed, pTurnSpeed);
 
-		return wrapAngle(pCurrentAngle + difference);
+		return wrapAngle(difference);
 
 	}
 

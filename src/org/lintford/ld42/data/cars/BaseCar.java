@@ -23,6 +23,9 @@ public class BaseCar extends RectangleEntity {
 	public static final int CAR_TYPE_POLICE = 1;
 	public static final int CAR_TYPE_CIV00 = 2;
 	public static final int CAR_TYPE_CIV01 = 3;
+	
+	public static final int TURNING_ANGLE_INCREMENTS_DEG = 1;
+	public static final int MAX_TURNING_ANGLE_DEGS = 35; // def. 35
 
 	// --------------------------------------
 	// Variables
@@ -89,8 +92,8 @@ public class BaseCar extends RectangleEntity {
 
 		wheelBase = HEIGHT / 2;
 		carSpeedMax = 1000 * RandomNumbers.random(0.90f, 1.1f);
-		carTurnAngleInc = (float) Math.toRadians(1.1f);
-		carTurnAngleMax = (float) Math.toRadians(8f);
+		carTurnAngleInc = (float) Math.toRadians(TURNING_ANGLE_INCREMENTS_DEG);
+		carTurnAngleMax = (float) Math.toRadians(MAX_TURNING_ANGLE_DEGS);
 
 		colorR = 1f;
 		colorG = 1f;

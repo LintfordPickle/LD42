@@ -121,11 +121,48 @@ public class CarRenderer extends BaseRenderer {
 		if (pCar.turningLeft())
 			srcBaseX += 3 * 32;
 
-		mTextureBatch.draw(mCarTexture, srcBaseX, srcBaseY, 32, 64, pCar.bounds(), -0.3f, pCar.colorR, pCar.colorG, pCar.colorB, 1);
-
 		float lAng = pCar.rotation + pCar.steerAngle;
 		float lStrDirX = (float) Math.cos(lAng);
 		float lStrDirY = (float) Math.sin(lAng);
+
+		// Render the front wheels (back wheels are probably not visible)
+		float lRad90Offset = (float) Math.toRadians(90);
+
+		float lWheelBaseWidth = 15;
+		float lRot = pCar.rotation + pCar.steerAngle + lRad90Offset;
+		float lLeftXOffset = (float) Math.cos(pCar.rotation + lRad90Offset) * lWheelBaseWidth;
+		float lLeftYOffset = (float) Math.sin(pCar.rotation + lRad90Offset) * lWheelBaseWidth;
+
+		float lRightXOffset = (float) Math.cos(pCar.rotation - lRad90Offset) * lWheelBaseWidth;
+		float lRightYOffset = (float) Math.sin(pCar.rotation - lRad90Offset) * lWheelBaseWidth;
+
+		mTextureBatch.draw(mCarTexture, 0, 448, 10, 14, pCar.mFrontWheels.x - 5 + lLeftXOffset, pCar.mFrontWheels.y - 7 + lLeftYOffset, 10, 14, -0.3f, lRot, 5f, 7f, 1f, pCar.colorR, pCar.colorG, pCar.colorB, 1);
+		mTextureBatch.draw(mCarTexture, 0, 448, 10, 14, pCar.mFrontWheels.x - 5 + lRightXOffset, pCar.mFrontWheels.y - 7 + lRightYOffset, 10, 14, -0.3f, lRot, 5f, 7f, 1f, pCar.colorR, pCar.colorG, pCar.colorB, 1);
+
+		mTextureBatch.draw(mCarTexture, 0, 448, 10, 14, pCar.mRearWheels.x - 5 + lLeftXOffset, pCar.mRearWheels.y - 7 + lLeftYOffset, 10, 14, -0.3f, pCar.rotation + lRad90Offset, 5f, 7f, 1f, pCar.colorR, pCar.colorG,
+				pCar.colorB, 1);
+		mTextureBatch.draw(mCarTexture, 0, 448, 10, 14, pCar.mRearWheels.x - 5 + lRightXOffset, pCar.mRearWheels.y - 7 + lRightYOffset, 10, 14, -0.3f, pCar.rotation + lRad90Offset, 5f, 7f, 1f, pCar.colorR, pCar.colorG,
+				pCar.colorB, 1);
+
+		mTextureBatch.draw(mCarTexture, srcBaseX, srcBaseY, 32, 64, pCar.bounds(), -0.3f, pCar.colorR, pCar.colorG, pCar.colorB, 1);
+
+		if (mWorld.carManager().playerCar() == pCar) {
+			if (pCar.currentNode != null)
+				Debug.debugManager().drawers().drawRect(pCore.HUD(), pCar.currentNode.x, pCar.currentNode.y, 10, 10, 1f, 1f, 1f);
+
+			if (pCar.targetNode != null)
+				Debug.debugManager().drawers().drawRect(pCore.HUD(), pCar.targetNode.x, pCar.targetNode.y, 10, 10, 1f, 1f, 1f);
+
+			Debug.debugManager().drawers().startLineRenderer(pCore.gameCamera());
+			Debug.debugManager().drawers().drawLine(pCar.bounds().centerX, pCar.bounds().centerY, pCar.bounds().centerX + lStrDirX * 100f, pCar.bounds().centerY + lStrDirY * 100f, 1f, 0f, 0f);
+
+			if (pCar.targetNode != null) {
+				Debug.debugManager().drawers().drawLine(pCar.x, pCar.y, pCar.targetNode.x, pCar.targetNode.y);
+
+			}
+			Debug.debugManager().drawers().endLineRenderer();
+
+		}
 
 		if (RENDER_DEBUG_COLLIABLES) {
 			Debug.debugManager().drawers().drawPoly(pCore.gameCamera(), pCar.bounds());

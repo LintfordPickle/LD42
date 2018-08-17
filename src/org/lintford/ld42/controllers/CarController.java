@@ -16,6 +16,7 @@ import net.lintford.library.core.LintfordCore;
 import net.lintford.library.core.debug.Debug;
 import net.lintford.library.core.maths.MathHelper;
 import net.lintford.library.core.maths.RandomNumbers;
+import net.lintford.library.core.maths.Vector2f;
 
 public class CarController extends BaseController {
 
@@ -26,6 +27,8 @@ public class CarController extends BaseController {
 	public static final String CONTROLLER_NAME = "CarController";
 
 	static final float CAR_ACCELERATION = 15.0f;
+
+	private static final boolean SPAWN_OTHER_VEHCILES = true;
 
 	private float VEHICLE_SPAWN_TIMER = 350;
 	private float VEHICLE_SHOOT_TIMER = 100;
@@ -116,9 +119,8 @@ public class CarController extends BaseController {
 		mShootTimer += pCore.time().elapseGameTimeMilli();
 		mSkidMarkTimer += pCore.time().elapseGameTimeMilli();
 
-		updateVehicleSpawns(pCore);
-
-		updateCar(pCore, mCarManager.playerCar());
+		if (SPAWN_OTHER_VEHCILES)
+			updateVehicleSpawns(pCore);
 
 		mUpdateCarList.clear();
 		final int lActiveCarCount = mCarManager.cars().size();
@@ -138,10 +140,15 @@ public class CarController extends BaseController {
 				continue;
 			}
 
-			updateCarAI(pCore, lCar);
+			updateCarAI(pCore, lCar, true);
 			updateCar(pCore, lCar);
 
 		}
+
+		// Test
+		updateCarAI(pCore, mCarManager.playerCar(), false);
+
+		updateCar(pCore, mCarManager.playerCar());
 
 	}
 
@@ -166,9 +173,14 @@ public class CarController extends BaseController {
 			pCar.dx *= 0.2f;
 			pCar.dy *= 0.2f;
 
+			// use the normalised car speed to adjust the amount of steer allowed (higher speed = less turnable)
+			float lModAmt = 1f - MathHelper.clamp(MathHelper.scaleToRange(Math.abs(pCar.speed), 0, pCar.carSpeedMax, 0, 1.2f), 0f, 1.0f);
+
 			// limit params
 			pCar.speed = MathHelper.clamp(pCar.speed, -pCar.carSpeedMax * 0.5f, pCar.carSpeedMax);
-			pCar.steerAngle = MathHelper.clamp(pCar.steerAngle, -pCar.carTurnAngleMax, pCar.carTurnAngleMax);
+
+			// The steer angle should be reduced with speed
+			pCar.steerAngle = MathHelper.clamp(pCar.steerAngle, -pCar.carTurnAngleMax * lModAmt, pCar.carTurnAngleMax * lModAmt);
 
 			// Try to make the handling less efficient at higher speeds
 			if (Math.abs(pCar.speed) > 15) {
@@ -281,31 +293,75 @@ public class CarController extends BaseController {
 
 	}
 
-	private void updateCarAI(LintfordCore pCore, BaseCar pCar) {
+	private void updateCarAI(LintfordCore pCore, BaseCar pCar, boolean pStrictTurning) {
 		if (pCar.targetNode == null) {
-			pCar.targetNode = pCar.currentNode.getRandomConnection();
+			if (pCar.currentNode != null) {
+				pCar.targetNode = pCar.currentNode.getRandomConnection();
+
+			} else {
+				// Need to find a node to go to
+				RoadSection lRoadSection = mLevelController.getRandomRoadSection();
+
+				if (lRoadSection != null) {
+					// Set the car to the position of the road section
+					LevelNode lStartNode = lRoadSection.getRandomStartNode();
+
+					pCar.x = lStartNode.x;
+					pCar.y = lStartNode.y;
+
+					pCar.currentNode = lStartNode;
+					pCar.targetNode = lStartNode.getRandomConnection();
+
+				}
+
+			}
+
 			return;
 		}
 
-		// Move the car towards the target node
-		final float lHeadingVecX = (pCar.targetNode.x) - pCar.x;
-		final float lHeadingVecY = (pCar.targetNode.y) - pCar.y;
+		// car to target position
+		Vector2f lTargetVector = new Vector2f(pCar.targetNode.x - pCar.x, pCar.targetNode.y - pCar.y);
 
-		// Upon arrival, chose a new destination
-		float dist = (float) Math.sqrt((lHeadingVecX * lHeadingVecX) + (lHeadingVecY * lHeadingVecY));
+		final float lHeadingVecX = (float) Math.cos(pCar.rotation);
+		final float lHeadingVecY = (float) Math.sin(pCar.rotation);
+
+		// Get the dist to the target
+		float dist = (float) Math.sqrt((lTargetVector.x * lTargetVector.x) + (lTargetVector.y * lTargetVector.y));
+
+		lTargetVector.nor();
+
+		final float lHeadingFresnel = (Vector2f.dot(lTargetVector.x, lTargetVector.y, lHeadingVecX, lHeadingVecY));
+
+		// FIXME Debug remvoe this
+//		if (pCar.currentNode != null) {
+//			pCar.x = pCar.currentNode.x;
+//			pCar.y = pCar.currentNode.y;
+//			pCar.rotation = (float) Math.toRadians(0);
+//
+//		}
 
 		if (dist > 32) {
-			pCar.rotation = MobController.turnToFace(pCar.x, pCar.y, pCar.targetNode.x, pCar.targetNode.y, pCar.rotation, 0.25f);
-			pCar.steerAngle = MobController.turnToFace(pCar.x, pCar.y, pCar.targetNode.x, pCar.targetNode.y, pCar.steerAngle, 5.25f);
+//			if (pStrictTurning)
+//				pCar.rotation = MobController.turnToFace(pCar.x, pCar.y, pCar.targetNode.x, pCar.targetNode.y, pCar.rotation, 0.25f);
+			pCar.steerAngle += MobController.turnToFace(pCar.x, pCar.y, pCar.targetNode.x, pCar.targetNode.y, pCar.rotation, 0.15f);
 			pCar.isSteering = true;
 
-			pCar.speed += (CAR_ACCELERATION * 0.25f) * RandomNumbers.random(0.9f, 1.1f);
+			// Amount of brake based on upcoming turn
+			// Amount of acceleration based on angle of current turn
+			if (!blockageFront(pCore, pCar)) {
+				pCar.speed += (CAR_ACCELERATION * 0.25f) * RandomNumbers.random(0.9f, 1.1f) * lHeadingFresnel * 0.75f;
+
+			} else {
+				// if it is a wall, then try reversing
+
+			}
 
 		} else {
 			LevelNode lNewCurrent = pCar.targetNode;
 
 			if (RandomNumbers.getRandomChance(60)) {
-				pCar.targetNode = pCar.targetNode.getRandomConnection(lHeadingVecX, lHeadingVecY);
+				pCar.targetNode = pCar.targetNode.getRandomConnection(lTargetVector.x, lTargetVector.y);
+
 			} else
 				pCar.targetNode = pCar.targetNode.getRandomConnection();
 
@@ -313,6 +369,23 @@ public class CarController extends BaseController {
 			pCar.currentNode = lNewCurrent;
 		}
 
+	}
+
+	private boolean blockageFront(LintfordCore pCore, BaseCar pCar) {
+		return blockage(pCore, pCar, pCar.rotation);
+
+	}
+
+	private boolean blockage(LintfordCore pCore, BaseCar pCar, float pAngle) {
+		return false;
+
+	}
+
+	/**
+	 * This checks to see if the target destination is too close tp either side of the vehicle that we couln't ever reach the target by turning and driving only forwards (i.e. we would need to reverse first).
+	 */
+	private boolean isTurnBlindSided(LintfordCore pCore, BaseCar pCar) {
+		return false;
 	}
 
 	private boolean handlePlayerInput(LintfordCore pCore, BaseCar pCar) {
