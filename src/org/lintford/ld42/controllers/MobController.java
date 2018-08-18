@@ -264,7 +264,6 @@ public class MobController extends BaseController {
 				float lFaceThisX = lPosX + reflectionVelNor.x;
 				float lFaceThisY = lPosY + reflectionVelNor.y;
 
-				pCar.rotation = turnToFace(lPosX, lPosY, lFaceThisX, lFaceThisY, pCar.rotation, 0.25f);
 				pCar.steerAngle = turnToFace(lPosX, lPosY, lFaceThisX, lFaceThisY, pCar.rotation, 0.25f);
 
 			}

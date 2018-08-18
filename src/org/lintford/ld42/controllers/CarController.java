@@ -145,9 +145,6 @@ public class CarController extends BaseController {
 
 		}
 
-		// Test
-		updateCarAI(pCore, mCarManager.playerCar(), false);
-
 		updateCar(pCore, mCarManager.playerCar());
 
 	}
@@ -332,29 +329,11 @@ public class CarController extends BaseController {
 
 		final float lHeadingFresnel = (Vector2f.dot(lTargetVector.x, lTargetVector.y, lHeadingVecX, lHeadingVecY));
 
-		// FIXME Debug remvoe this
-//		if (pCar.currentNode != null) {
-//			pCar.x = pCar.currentNode.x;
-//			pCar.y = pCar.currentNode.y;
-//			pCar.rotation = (float) Math.toRadians(0);
-//
-//		}
-
 		if (dist > 32) {
-//			if (pStrictTurning)
-//				pCar.rotation = MobController.turnToFace(pCar.x, pCar.y, pCar.targetNode.x, pCar.targetNode.y, pCar.rotation, 0.25f);
 			pCar.steerAngle += MobController.turnToFace(pCar.x, pCar.y, pCar.targetNode.x, pCar.targetNode.y, pCar.rotation, 0.15f);
 			pCar.isSteering = true;
 
-			// Amount of brake based on upcoming turn
-			// Amount of acceleration based on angle of current turn
-			if (!blockageFront(pCore, pCar)) {
-				pCar.speed += (CAR_ACCELERATION * 0.25f) * RandomNumbers.random(0.9f, 1.1f) * lHeadingFresnel * 0.75f;
-
-			} else {
-				// if it is a wall, then try reversing
-
-			}
+			pCar.speed += (CAR_ACCELERATION * 0.25f) * RandomNumbers.random(0.9f, 1.1f) * lHeadingFresnel * 0.75f;
 
 		} else {
 			LevelNode lNewCurrent = pCar.targetNode;
@@ -369,23 +348,6 @@ public class CarController extends BaseController {
 			pCar.currentNode = lNewCurrent;
 		}
 
-	}
-
-	private boolean blockageFront(LintfordCore pCore, BaseCar pCar) {
-		return blockage(pCore, pCar, pCar.rotation);
-
-	}
-
-	private boolean blockage(LintfordCore pCore, BaseCar pCar, float pAngle) {
-		return false;
-
-	}
-
-	/**
-	 * This checks to see if the target destination is too close tp either side of the vehicle that we couln't ever reach the target by turning and driving only forwards (i.e. we would need to reverse first).
-	 */
-	private boolean isTurnBlindSided(LintfordCore pCore, BaseCar pCar) {
-		return false;
 	}
 
 	private boolean handlePlayerInput(LintfordCore pCore, BaseCar pCar) {

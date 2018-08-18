@@ -146,25 +146,25 @@ public class CarRenderer extends BaseRenderer {
 
 		mTextureBatch.draw(mCarTexture, srcBaseX, srcBaseY, 32, 64, pCar.bounds(), -0.3f, pCar.colorR, pCar.colorG, pCar.colorB, 1);
 
-		if (mWorld.carManager().playerCar() == pCar) {
-			if (pCar.currentNode != null)
-				Debug.debugManager().drawers().drawRect(pCore.HUD(), pCar.currentNode.x, pCar.currentNode.y, 10, 10, 1f, 1f, 1f);
+		if (RENDER_DEBUG_COLLIABLES) {
+			if (mWorld.carManager().playerCar() == pCar) {
+				if (pCar.currentNode != null)
+					Debug.debugManager().drawers().drawRect(pCore.HUD(), pCar.currentNode.x, pCar.currentNode.y, 10, 10, 1f, 1f, 1f);
 
-			if (pCar.targetNode != null)
-				Debug.debugManager().drawers().drawRect(pCore.HUD(), pCar.targetNode.x, pCar.targetNode.y, 10, 10, 1f, 1f, 1f);
+				if (pCar.targetNode != null)
+					Debug.debugManager().drawers().drawRect(pCore.HUD(), pCar.targetNode.x, pCar.targetNode.y, 10, 10, 1f, 1f, 1f);
 
-			Debug.debugManager().drawers().startLineRenderer(pCore.gameCamera());
-			Debug.debugManager().drawers().drawLine(pCar.bounds().centerX, pCar.bounds().centerY, pCar.bounds().centerX + lStrDirX * 100f, pCar.bounds().centerY + lStrDirY * 100f, 1f, 0f, 0f);
+				Debug.debugManager().drawers().startLineRenderer(pCore.gameCamera());
+				Debug.debugManager().drawers().drawLine(pCar.bounds().centerX, pCar.bounds().centerY, pCar.bounds().centerX + lStrDirX * 100f, pCar.bounds().centerY + lStrDirY * 100f, 1f, 0f, 0f);
 
-			if (pCar.targetNode != null) {
-				Debug.debugManager().drawers().drawLine(pCar.x, pCar.y, pCar.targetNode.x, pCar.targetNode.y);
+				if (pCar.targetNode != null) {
+					Debug.debugManager().drawers().drawLine(pCar.x, pCar.y, pCar.targetNode.x, pCar.targetNode.y);
+
+				}
+				Debug.debugManager().drawers().endLineRenderer();
 
 			}
-			Debug.debugManager().drawers().endLineRenderer();
 
-		}
-
-		if (RENDER_DEBUG_COLLIABLES) {
 			Debug.debugManager().drawers().drawPoly(pCore.gameCamera(), pCar.bounds());
 
 		}
